@@ -1,4 +1,4 @@
-# srun -p llm-safety --quotatype=reserved --gres=gpu:8 --cpus-per-task=64 sh scripts/examples/dpo/run.sh
+# sh scripts/examples/dpo/run.sh
 LAUNCH="accelerate launch --config_file scripts/accelerate_configs/multi_gpu.yaml --num_processes=8"
 
 base_model_name="meta-llama/Llama-2-7b-hf"
@@ -8,7 +8,7 @@ chosen_only=False
 sanity_check=False
 output_dir="./output"
 
-# *sft*
+# SFT
 sft_run_name="${dataset_name}/sft"
 PYTHONPATH=. $LAUNCH scripts/examples/sft/sft.py \
     --base_model_name ${base_model_name} \
@@ -22,13 +22,13 @@ PYTHONPATH=. $LAUNCH scripts/examples/sft/sft.py \
 
 sft_model_name="${output_dir}/${sft_run_name}/merged_checkpoint"
 
-# merge sft lora weights
+# Merge SFT LoRA weights
 PYTHONPATH=. python src/tools/merge_peft_adapter.py \
     --adapter_model_name "${output_dir}/${sft_run_name}/best_checkpoint" \
     --base_model_name ${base_model_name} \
     --output_name ${sft_model_name}
 
-# *dpo*
+# DPO
 dpo_run_name="${dataset_name}/dpo"
 PYTHONPATH=. $LAUNCH scripts/examples/dpo/dpo.py \
     --sft_model_name ${sft_model_name} \

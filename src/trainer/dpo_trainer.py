@@ -33,6 +33,7 @@ if is_deepspeed_available():
 
 @dataclass
 class DPODataMapFunc:
+    """Map raw texts to tokens, attention masks, and labels."""
     tokenizer: PreTrainedTokenizerBase
     label_pad_token_id: Optional[int] = -100
     completion_only: Optional[bool] = True
@@ -63,10 +64,6 @@ class DPODataMapFunc:
             prompt_rejected_tokens["input_ids"].append(self.tokenizer.eos_token_id)
             prompt_rejected_tokens["attention_mask"].append(1)
 
-            # if (prompt_tokens["input_ids"] != prompt_chosen_tokens["input_ids"][:len(prompt_tokens["input_ids"])] 
-            #  or prompt_tokens["input_ids"] != prompt_rejected_tokens["input_ids"][:len(prompt_tokens["input_ids"])]):
-            #     print_local_main("unexpected merged tokens. skip")
-            #     continue
             prompt_len = common_prefix_length(prompt_chosen_tokens["input_ids"], prompt_rejected_tokens["input_ids"])
 
             for k, toks in {
@@ -114,6 +111,7 @@ class DPODataCollatorWithPadding:
         """
         if not generate:
 
+            # `chosen` and `rejected` merged into a single batch for more efficient batched forward pass;
             right_padding_features = []
             for feature in features:
                 right_padding_features.append(

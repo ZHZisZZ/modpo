@@ -1,4 +1,4 @@
-# srun -p llm-safety --quotatype=reserved --gres=gpu:8 --cpus-per-task=64 sh scripts/modpo/summarize_w_length_penalty/run.sh
+# sh scripts/modpo/summarize_w_length_penalty/run.sh
 LAUNCH="accelerate launch --config_file scripts/accelerate_configs/multi_gpu.yaml --num_processes=8"
 
 base_model_name="meta-llama/Llama-2-7b-hf"
@@ -12,7 +12,7 @@ per_device_eval_batch_size=6
 gradient_accumulation_steps=4
 learning_rate=5e-4
 
-# 1. sft
+# SFT
 sft_run_name="${dataset_name}/sft"
 chosen_only=True
 PYTHONPATH=. $LAUNCH scripts/examples/sft/sft.py \
@@ -34,14 +34,16 @@ PYTHONPATH=. $LAUNCH scripts/examples/sft/sft.py \
     --peft_config.lora_alpha 1 \
     --peft_config.lora_dropout 0.05
 
-# merge sft lora weights
+# Merge SFT LoRA weights
 PYTHONPATH=. python src/tools/merge_peft_adapter.py \
     --adapter_model_name "${output_dir}/${sft_run_name}/best_checkpoint" \
     --base_model_name ${base_model_name} \
     --dtype bf16 \
     --output_name "${output_dir}/${sft_run_name}/merged_checkpoint"
 
-# modpo
+# MODPO stage 1 is skipped since we use a programmatically defined reward function: negative length penalty
+
+# MODPO stage 2: language modeling with the negative length penalty as margin
 # r = r_prefernce + w*(-length_penalty)
 w=0.1 # 0 reduces to vanilla dpo
 lm_run_name="${dataset_name}/modpo/lm/r_better+($w)*(-length_penalty)"

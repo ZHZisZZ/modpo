@@ -127,10 +127,11 @@ if Accelerator().is_local_main_process and script_args.peft_config:
 
 @dataclass
 class LengthPenaltyRewardWrapper(RewardWrapperBase):
+    """Penalizes longer responses."""
     tokenizer: PreTrainedTokenizerBase
     def __call__(self, inputs: RewardWrapperInput) -> torch.Tensor:
         from src.utils import prepare_input
-        tokenized_responses = self.tokenizer(inputs["response"])
+        tokenized_responses = self.tokenizer(inputs.response)
         rewards = [-len(tokenized_response_id) for tokenized_response_id in tokenized_responses["input_ids"]]
         return prepare_input(torch.Tensor(rewards).to(torch.bfloat16))
 

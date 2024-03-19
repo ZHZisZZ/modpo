@@ -33,6 +33,7 @@ if is_peft_available():
 
 @dataclass
 class SFTDataMapFunc:
+    """Map raw texts to tokens, attention masks, and labels."""
     tokenizer: PreTrainedTokenizerBase
     label_pad_token_id: Optional[int] = -100
     completion_only: Optional[bool] = True
@@ -100,6 +101,7 @@ class SFTDataCollatorWithPadding:
         """
         if not generate:
 
+            # right padding for training
             right_padding_features = []
             for feature in features:
                 right_padding_features.append(
@@ -123,6 +125,7 @@ class SFTDataCollatorWithPadding:
 
         else:
 
+            # left padding for batched generation
             left_padding_features = [] 
             padding_side_default = self.tokenizer.padding_side
             self.tokenizer.padding_side = "left"

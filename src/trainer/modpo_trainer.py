@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from operator import ge
 from typing import Callable, Dict, List, Literal, Optional, Tuple, Union, Any
 
 import torch
@@ -11,12 +10,18 @@ from transformers.trainer_callback import TrainerCallback
 from transformers.trainer_utils import EvalLoopOutput
 
 from src.trainer.dpo_trainer import DPOTrainer, DPODataMapFunc, DPODataCollatorWithPadding
-from src.utils import RewardWrapperList
+from src.utils import RewardWrapperList, RewardWrapperInput
 
 
 @dataclass
 class MODPODataMapFunc(DPODataMapFunc):
     def __call__(self, examples):
+        """
+        Additionally keep untokenized prompts (`raw_prompt`) and responses (`chosen`, `rejected`)
+        in the batch for easy adaptation for customized margin reward models (`src.utils.RewardWrapperBase`).
+
+        For example, margin reward models can be an external API than depends on raw texts.
+        """
         new_examples = super().__call__(examples)
         new_examples["raw_prompt"] = examples["raw_prompt"]
         new_examples["chosen"] = examples["chosen"]
@@ -27,23 +32,6 @@ class MODPODataMapFunc(DPODataMapFunc):
 @dataclass
 class MODPODataCollatorWithPadding(DPODataCollatorWithPadding):
     def __call__(self, features: List[Dict[str, Any]], generate: Optional[bool] = False) -> Dict[str, Any]:
-        """
-        if not generate:
-            batch = {
-                "input_ids": ...,
-                "attention_mask": ...,
-                "labels": ...,
-                (*new*)
-                "raw_prompt": ...,
-                "response": ...,
-            }
-        else:
-            batch = {
-                "prompt": ...,
-                "prompt_input_ids": ...,
-                "prompt_attention_mask": ...,
-            }
-        """
         batch = super().__call__(features, generate)
         if not generate:
             batch["raw_prompt"] = [feature["raw_prompt"] for feature in features]*2
@@ -52,12 +40,18 @@ class MODPODataCollatorWithPadding(DPODataCollatorWithPadding):
 
 
 class MODPOTrainer(DPOTrainer):
+    """
+    The MODPOTrainer is a light-weight extension of DPOTrainer that supports training with 
+    multiple margin reward models for multi-objective alignment. 
+
+    Please use `set_wrapped_margin_reward_model_list` to set your customized margin reward models
+    (`wrapped_margin_reward_model_list`) and the weights for each objective (`w`).
+    """
 
     def __init__(
         self,
         model: Union[PreTrainedModel, nn.Module] = None,
         ref_model: Optional[Union[PreTrainedModel, nn.Module]] = None,
-        # w: Tuple[float] = None,
         beta: float = 0.1,
         loss_type: Literal["sigmoid", "hinge"] = "sigmoid",
         args: TrainingArguments = None,
@@ -111,7 +105,6 @@ class MODPOTrainer(DPOTrainer):
             generate_during_eval=generate_during_eval,
             compute_metrics=compute_metrics,
         )
-        # self.w = torch.tensor(w).to(self.accelerator.device)
     
     def set_wrapped_margin_reward_model_list(
         self, 
@@ -119,6 +112,22 @@ class MODPOTrainer(DPOTrainer):
         w: List[float],
         prepare: Optional[bool] = True,
     ):
+        """
+        Set margin reward models.
+
+        Args:
+            wrapped_margin_reward_model_list (`src.utils.RewardWrapperList`):
+                A list of reward model to act as margin in `modpo_loss`. 
+            w (`List[float]`):
+                A list of weights for each objective. Note that w[0] indicates the weight for 
+                the preference that we are currently training on and w[1:] indicate the weights for
+                the margin reward models in `wrapped_margin_reward_model_list`.
+            prepare (`bool`):
+                Whether or not we need to `self.accelerator.prepare_model` the margin reward models for advanced distributed training. 
+                If these margin reward models are part of the self.model (e.g, lora weights), they will have been prepared
+                in `__init__` and we would recommend `prepare=False` to avoid unnecessary model weights copies.
+                See `scripts/modpo/beavertails/modpo.py` for a complete example.
+        """
         if prepare:
             def prepare(wrapped_reward_model):
                 if hasattr(wrapped_reward_model, "model"):
@@ -128,6 +137,7 @@ class MODPOTrainer(DPOTrainer):
             wrapped_margin_reward_model_list = wrapped_margin_reward_model_list.map(prepare)
         self.wrapped_margin_reward_model_list = wrapped_margin_reward_model_list 
         self.w = torch.tensor(w).to(self.accelerator.device)
+        assert len(self.wrapped_margin_reward_model_list) == len(self.w) - 1
 
     def modpo_loss(
         self,
@@ -152,6 +162,7 @@ class MODPOTrainer(DPOTrainer):
         return losses, chosen_rewards.detach(), rejected_rewards.detach()
 
     def dpo_loss(self, *args, **kwargs):
+        """Disable the `dpo_loss` inherited from the DPOTrainer"""
         raise NotImplementedError
 
     def get_batch_metrics(
@@ -176,10 +187,10 @@ class MODPOTrainer(DPOTrainer):
                 _,
             ) = self.forward(self.ref_model, batch)
 
-        dtype = policy_chosen_logps.dtype
-
-        margin_reward_list = self.wrapped_margin_reward_model_list({"raw_prompt": batch["raw_prompt"], "response": batch["response"]})
-        margin_rewards = torch.stack(margin_reward_list, dim=-1).to(dtype).to(self.accelerator.device) # (B*2, n-1)
+        margin_reward_list = self.wrapped_margin_reward_model_list(
+            RewardWrapperInput(raw_prompt=batch["raw_prompt"], response=batch["response"]))
+        margin_rewards = torch.stack(margin_reward_list, dim=-1).to(
+            policy_chosen_logps.dtype).to(self.accelerator.device) # (B*2, n-1)
         chosen_margin_rewards, rejected_margin_rewards = margin_rewards.chunk(2) # (B, n-1)
          
         losses, chosen_rewards, rejected_rewards = self.modpo_loss(
@@ -193,7 +204,6 @@ class MODPOTrainer(DPOTrainer):
 
         accuracies = (chosen_rewards > rejected_rewards).float()
 
-        # change
         prefix = "eval_" if train_eval == "eval" else ""
         metrics[f"{prefix}rewards/margins"] = (chosen_rewards - rejected_rewards).cpu()
         metrics[f"{prefix}rewards/chosen"] = chosen_rewards.cpu()

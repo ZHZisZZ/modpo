@@ -1,5 +1,4 @@
-# Use this script to reproduce the results from the MODPO paper.
-# srun -p llm-safety --quotatype=reserved --gres=gpu:8 --cpus-per-task=64 sh scripts/modpo/beavertails/run.sh
+# sh scripts/modpo/beavertails/run.sh
 LAUNCH="accelerate launch --config_file scripts/accelerate_configs/multi_gpu.yaml --num_processes=8"
 
 sft_model_name="PKU-Alignment/alpaca-7b-reproduced"
@@ -13,9 +12,10 @@ per_device_eval_batch_size=6
 gradient_accumulation_steps=2
 learning_rate=5e-4
 
-# users should make sure the *mrm* and *lm* use the same beta (kl penalty) for training
+# Note that `PKU-Alignment/alpaca-7b-reproduced` is a SFTed model in the first place; therefore, there is no need to SFT again. 
 
-# *mrm* margin reward modeling (train an implicit safe reward)
+# MODPO stage 1: margin reward modeling for safety
+# Note that we parametrize this reward model implicitly as a language model: r(x,y) = logp(y|x)-logp_{sft}(y|x) and train with DPO.
 mrm_run_name="${dataset_name}/modpo/mrm-safer"
 PYTHONPATH=. $LAUNCH scripts/examples/dpo/dpo.py \
     --sft_model_name ${sft_model_name} \
@@ -34,7 +34,7 @@ PYTHONPATH=. $LAUNCH scripts/examples/dpo/dpo.py \
     --peft_config.lora_alpha 1 \
     --peft_config.lora_dropout 0
 
-# *lm* language modeling (the implicit safe reward as margin)
+# MODPO stage 2: language modeling with the safety reward as margin
 # r = (w)*r_better + (1-w)*r_safer
 w=0.5
 lm_run_name="${dataset_name}/modpo/lm/($w)*r_better+(1-$w)*r_safe"

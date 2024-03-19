@@ -1,13 +1,19 @@
 from abc import ABC, abstractclassmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import Any, Text, List, Dict, Optional
 
 import torch
 from accelerate import Accelerator
-from transformers import pipeline, PreTrainedTokenizerBase, PreTrainedModel
+from transformers import PreTrainedTokenizerBase, PreTrainedModel
 
 from src.utils import get_batch_logps, prepare_input
 from src.data.raw_data.utils import DEFAULT_PROMPT_TEMPLATE
+
+
+@dataclass
+class RewardWrapperInput:
+    raw_prompt: List[str]
+    response: List[str]
 
 
 @dataclass
@@ -18,10 +24,10 @@ class RewardWrapperBase(ABC):
 
 
 @dataclass
-class RewardWrapperList:
+class RewardWrapperList(RewardWrapperBase):
     reward_wrapper_list: List[RewardWrapperBase]
 
-    def __call__(self, inputs: Any) -> List[Any]:
+    def __call__(self, inputs: Any) -> List[torch.Tensor]:
         outputs_list = []
         for reward_wrapper in self.reward_wrapper_list:
             outputs_list.append(reward_wrapper(inputs))
@@ -32,14 +38,15 @@ class RewardWrapperList:
             self.reward_wrapper_list[i] = func(self.reward_wrapper_list[i])
         return self
 
-@dataclass
-class RewardWrapperInput:
-    raw_prompt: List[str]
-    response: List[str]
+    def __len__(self):
+        return len(self.reward_wrapper_list)
 
 
 @dataclass
 class ImplicitRewardWrapper(RewardWrapperBase):
+    """
+    An implicit reward model parameterized as r(x,y) = logp(y|x)-logp_{ref}(y|x)
+    """
     model: PreTrainedModel
     ref_model: PreTrainedModel
     tokenizer: PreTrainedTokenizerBase
@@ -51,6 +58,7 @@ class ImplicitRewardWrapper(RewardWrapperBase):
     @torch.no_grad()
     def __call__(self, inputs: RewardWrapperInput) -> torch.Tensor:
         from src.trainer.sft_trainer import SFTDataMapFunc, SFTDataCollatorWithPadding
+        inputs = asdict(inputs)
         inputs["prompt"] = [self.prompt_template.format(
             raw_prompt=raw_prompt) for raw_prompt in inputs["raw_prompt"]]
         tokens = SFTDataMapFunc(tokenizer=self.tokenizer)(inputs)
@@ -63,14 +71,14 @@ class ImplicitRewardWrapper(RewardWrapperBase):
         return self.beta * (policy_all_logps - ref_all_logps)
 
     @torch.no_grad()
-    def forward(self, model: PreTrainedModel, inputs: Dict[Text, torch.Tensor]) -> torch.Tensor:
+    def forward(self, model: PreTrainedModel, batch: Dict[Text, torch.Tensor]) -> torch.Tensor:
         all_logits = model(
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
+            input_ids=batch["input_ids"],
+            attention_mask=batch["attention_mask"],
         ).logits.to(torch.float32)
         all_logps = get_batch_logps(
             all_logits,
-            inputs["labels"],
+            batch["labels"],
             average_log_prob=self.average_log_prob,
             label_pad_token_id=self.label_pad_token_id,
         )
