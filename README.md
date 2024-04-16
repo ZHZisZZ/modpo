@@ -3,9 +3,9 @@
 This repo includes a reference implementation of MODPO, an algorithm that extends Direct Preference Optimization (DPO) for multiple alignment objectives with minimal overheads, as described in the paper [Beyond One-Preference-Fits-All Alignment: Multi-Objective Direct Preference Optimization](https://arxiv.org/pdf/2310.03708.pdf).
 
 
-## MODPO adapts DPO for multiple objective with two lines of codes
+## MODPO adapts DPO for multiple objectives with two extra lines of codes
 
-You can find the MODPO loss in [modpo_trainer.py#L132](https://github.com/ZHZisZZ/modpo/blob/main/src/trainer/modpo_trainer.py#L132), and the DPO loss is in [dpo_trainer.py#L415](https://github.com/ZHZisZZ/modpo/blob/main/src/trainer/dpo_trainer.py#L415). The main difference is that MODPO includes an extra margin to makes sure that the language model is steered by more than one objective.
+The MODPO loss function is shown in [modpo_trainer.py#L142](https://github.com/ZHZisZZ/modpo/blob/main/src/trainer/modpo_trainer.py#L142) while the DPO loss function is shown in [dpo_trainer.py#L413](https://github.com/ZHZisZZ/modpo/blob/main/src/trainer/dpo_trainer.py#L413). MODPO differs in that it includes [an extra margin](https://github.com/ZHZisZZ/modpo/blob/main/src/trainer/modpo_trainer.py#L151-L152) to make sure that the language model is steered by more than one objective.
 
 ## Installation
 
@@ -16,7 +16,7 @@ create -n modpo python=3.10
 conda activate modpo
 ```
 
-#### Install
+#### Install dependencies
 
 ```bash
 git clone https://github.com/ZHZisZZ/modpo.git
@@ -25,46 +25,35 @@ pip install -r requirements.txt
 pip install torch=2.1.0 --index-url https://download.pytorch.org/whl/cu118
 pip install flash-attn==2.3.2 --no-build-isolation
 ```
-#### Log in Wandb
-
-```bash
-export WANDB_MODE=online
-export WANDB_ENTITY={your_id}
-export WANDB_KEY={your_key}
-wandb login {your_key}
-```
-
-We use `cuda-11.8`. You are free to modify the package versions. However, there is no gurantee that modpo always supports the latest version of all the packages included.
-
 
 ## MODPO examples
-We provide all-in-one scripts for each MODPO application in `scripts/modpo`👏.
 
 ### Safety alignment
 
 `bash scripts/modpo/beavertails/run.sh`
 
-This set of experiments reproduces the safety alignment experiments from [our paper](https://arxiv.org/pdf/2310.03708.pdf). See wandb reports for experiment results [here](https://api.wandb.ai/links/asap-zzhou/qmn8dwhk).
+This script reproduces the safety alignment experiments from [our paper](https://arxiv.org/pdf/2310.03708.pdf). See wandb reports for experimental results [here](https://api.wandb.ai/links/asap-zzhou/qmn8dwhk).
 
 ### Summarization with length penalty
 
 `bash scripts/modpo/summarize_w_length_penalty/run.sh`
 
-This sets of experiments is a simpified version of Long-form QA from [our paper](https://arxiv.org/pdf/2310.03708.pdf). We apply MODPO to balance human preference and length penalty for summarization tasks.
+This script reproduces the experiments from [Disentangling Length from Quality in Direct Preference Optimization](https://arxiv.org/abs/2403.19159v1), which is a simpified version of Long-form QA experiments from [our paper](https://arxiv.org/pdf/2310.03708.pdf). We apply MODPO to balance human preference and response length in summarizing long text.
 
 ## Other examples
 
-This repository currently also supports other methods
+This repository also supports some common training pipline:
 
 - `supervised fine-tuning`: `scripts/examples/sft/run.sh`
 - `reward training`: `scripts/examples/rm/run.sh`
 - `dpo fine-tuning`: `scripts/examples/dpo/run.sh`
 
-If you want to add your own alignment algorithms, please add a trainer in `src/trainer` and new example in `scripts/examples`.
+If you want to implement your alignment algorithms, please add new trainers under [`src/trainer`](https://github.com/ZHZisZZ/modpo/blob/main/src/trainer).
 
-## Adding new datasets
+## Adding customized datasets
 
-Please add your dataset class in `src/data/raw_data`. See `src/data/raw_data/shp` for an example.
+[`REAL_DATASET_CONFIGS(src/data/configs.py)`](https://github.com/ZHZisZZ/modpo/blob/main/src/data/configs.py#L19) lists the datasets currently suppported.
+If you want to train on your customized datasets, please add new datasets under [`src/data/raw_data`](https://github.com/ZHZisZZ/modpo/blob/main/src/data/raw_data) and modify [`REAL_DATASET_CONFIGS(src/data/configs.py)`](https://github.com/ZHZisZZ/modpo/blob/main/src/data/configs.py#L19) accordingly. Please see [`src/data/raw_data/shp`](https://github.com/ZHZisZZ/modpo/blob/main/src/data/raw_data/shp.py) for an example.
 
 ### Citing MODPO
 

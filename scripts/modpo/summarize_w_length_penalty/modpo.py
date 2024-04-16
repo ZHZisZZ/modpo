@@ -126,7 +126,7 @@ if Accelerator().is_local_main_process and script_args.peft_config:
     trainer.model.print_trainable_parameters()
 
 @dataclass
-class LengthPenaltyRewardWrapper(RewardWrapperBase):
+class LengthPenaltyWrapper(RewardWrapperBase):
     """Penalizes longer responses."""
     tokenizer: PreTrainedTokenizerBase
     def __call__(self, inputs: RewardWrapperInput) -> torch.Tensor:
@@ -136,7 +136,7 @@ class LengthPenaltyRewardWrapper(RewardWrapperBase):
         return prepare_input(torch.Tensor(rewards).to(torch.bfloat16))
 
 trainer.set_wrapped_margin_reward_model_list(
-    RewardWrapperList([LengthPenaltyRewardWrapper(tokenizer=tokenizer)]),
+    RewardWrapperList([LengthPenaltyWrapper(tokenizer=tokenizer)]),
     w=(1, script_args.w),
     prepare=False,
 )

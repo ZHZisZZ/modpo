@@ -44,9 +44,9 @@ PYTHONPATH=. python src/tools/merge_peft_adapter.py \
 # MODPO stage 1 is skipped since we use a programmatically defined reward function: negative length penalty
 
 # MODPO stage 2: language modeling with the negative length penalty as margin
-# r = r_prefernce + w*(-length_penalty)
+# r = r_prefernce + w*length_penalty
 w=0.1 # 0 reduces to vanilla dpo
-lm_run_name="${dataset_name}/modpo/lm/r_better+($w)*(-length_penalty)"
+lm_run_name="${dataset_name}/modpo/lm/r_better+$w*length_penalty"
 PYTHONPATH=. $LAUNCH scripts/modpo/summarize_w_length_penalty/modpo.py \
     --sft_model_name "${output_dir}/${sft_run_name}/best_checkpoint" \
     --prompt_template "${prompt_template}" \
