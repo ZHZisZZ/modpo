@@ -7,7 +7,7 @@ from accelerate import Accelerator
 from transformers import PreTrainedTokenizerBase, PreTrainedModel
 
 from src.utils import get_batch_logps, prepare_input
-from src.data.raw_data.utils import DEFAULT_PROMPT_TEMPLATE
+from src.data.configs import DEFAULT_PROMPT_TEMPLATE
 
 
 @dataclass

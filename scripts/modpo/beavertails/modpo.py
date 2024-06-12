@@ -11,9 +11,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from src.trainer.modpo_trainer import MODPOTrainer
 from src.data.configs import DATASET_CONFIGS, DEFAULT_PROMPT_TEMPLATE
 from src.utils import (
-    print_local_main, disable_progress_bar_non_local_main, prepare_model_for_peft, param_sharding_enabled, PeftAsPreTrained,
-    RewardWrapperList, ImplicitRewardWrapper,
+    print_local_main, disable_progress_bar_non_local_main, 
+    prepare_model_for_peft, param_sharding_enabled, PeftAsPreTrained,
 )
+from src.utils.reward import RewardWrapperList, ImplicitRewardWrapper
 
 disable_progress_bar_non_local_main()
 
@@ -25,7 +26,7 @@ class ScriptArguments:
     margin_reward_model_name: str = field(metadata={"help": "the margin reward model name"})
     use_flash_attention_2: Optional[bool] = field(default=True, metadata={"help": "whether to use flash attention 2"})
     prompt_template: Optional[str] = field(default=DEFAULT_PROMPT_TEMPLATE, metadata={"help": "the prompt template"})
-    dataset_name: Optional[str] = field(default="Anthropic/hh-rlhf", metadata={"help": "the dataset name"})
+    dataset_name: Optional[str] = field(default="PKU-Alignment/PKU-SafeRLHF-10K", metadata={"help": "the dataset name"})
     dataset_caching: Optional[bool] = field(default=False, metadata={"help": "used cached dataset"})
     sanity_check: Optional[bool] = field(default=False, metadata={"help": "whether to conduct sanity check"})
 

@@ -206,3 +206,14 @@ def prepare_input(data):
         #     kwargs.update({"dtype": Accelerator().state.deepspeed_plugin.hf_ds_config.dtype()})
         return data.to(**kwargs)
     return data
+
+
+def set_seeds(seed):
+    import random
+    import numpy as np
+    import torch
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True

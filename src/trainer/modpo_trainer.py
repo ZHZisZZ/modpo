@@ -10,7 +10,7 @@ from transformers.trainer_callback import TrainerCallback
 from transformers.trainer_utils import EvalLoopOutput
 
 from src.trainer.dpo_trainer import DPOTrainer, DPODataMapFunc, DPODataCollatorWithPadding
-from src.utils import RewardWrapperList, RewardWrapperInput
+from src.utils.reward import RewardWrapperList, RewardWrapperInput
 
 
 @dataclass

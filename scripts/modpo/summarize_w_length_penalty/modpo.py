@@ -10,10 +10,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments,
 
 from src.trainer.modpo_trainer import MODPOTrainer
 from src.data.configs import DATASET_CONFIGS, DEFAULT_PROMPT_TEMPLATE
-from src.utils import (
-    print_local_main, disable_progress_bar_non_local_main, param_sharding_enabled,
-    RewardWrapperList, RewardWrapperBase, RewardWrapperInput
-)
+from src.utils import print_local_main, disable_progress_bar_non_local_main, param_sharding_enabled
+from src.utils.reward import RewardWrapperList, RewardWrapperBase, RewardWrapperInput
 
 disable_progress_bar_non_local_main()
 
