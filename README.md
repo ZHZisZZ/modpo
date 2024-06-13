@@ -18,9 +18,9 @@ pip install flash-attn==2.3.2 --no-build-isolation
 
 This repository includes two MODPO examples:
 
-- Safety alignment: Balances different values such as safety vs. helpfulness. See [`scripts/modpo/beavertails`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/modpo/beavertails) for details.
+- Safety alignment ([`scripts/modpo/beavertails`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/modpo/beavertails)): Balances different values such as safety vs. helpfulness.
 
-- Summarization with length penalty: Reduces length bias (verbosity) in summarization. See [`scripts/modpo/summarize_w_length_penalty`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/modpo/beavertails) for details.
+- Summarization with length penalty ([`scripts/modpo/summarize_w_length_penalty`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/modpo/summarize_w_length_penalty)): Reduces length bias (verbosity) in summarization.
 
 ## Other examples
 
