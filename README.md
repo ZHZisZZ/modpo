@@ -10,27 +10,25 @@ TL;DR: Compared to [DPO loss](https://github.com/ZHZisZZ/modpo/blob/main/src/tra
 create -n modpo python=3.10
 conda activate modpo
 pip install -r requirements.txt
-pip install torch=2.1.0 --index-url https://download.pytorch.org/whl/cu118
+pip install torch=2.1.0 --index-url https://download.pytorch.org/whl/cu118 
 pip install flash-attn==2.3.2 --no-build-isolation
 ```
 
 ## Running MODPO
 
-#### Safety alignment
+This repository includes two MODPO examples:
 
-`sh scripts/modpo/beavertails/run.sh` reproduces the safety alignment experiments from the [MODPO paper](https://arxiv.org/pdf/2310.03708.pdf).
+- Safety alignment: Balances different values such as safety vs. helpfulness. See [`scripts/modpo/beavertails`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/modpo/beavertails) for details.
 
-#### Summarization with length penalty
-
-`sh scripts/modpo/summarize_w_length_penalty/run.sh` reproduces the simplified Long-form QA experiments from the [MODPO paper](https://arxiv.org/pdf/2310.03708.pdf). MODPO is applied here to balance human preferences with response length in summarizing extensive texts.
+- Summarization with length penalty: Reduces length bias (verbosity) in summarization. See [`scripts/modpo/summarize_w_length_penalty`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/modpo/beavertails) for details.
 
 ## Other examples
 
 This repository also contains other off-the-shelf tuning recipes:
 
-- SFT (Supervised Fine-tuning): [`scripts/examples/sft/run.sh`]()
-- RM (Reward Modeling): [`scripts/examples/rm/run.sh`]()
-- DPO (Direct Preference Optimization): [`scripts/examples/dpo/run.sh`]()
+- SFT (Supervised Fine-tuning): [`scripts/examples/sft/run.sh`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/examples/sft/run.sh)
+- RM (Reward Modeling): [`scripts/examples/rm/run.sh`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/examples/rm/run.sh)
+- DPO (Direct Preference Optimization): [`scripts/examples/dpo/run.sh`](https://github.com/ZHZisZZ/modpo/blob/main/scripts/examples/dpo/run.sh)
 
 To implement new alignment algorithms, please add new trainers at [`src/trainer`](https://github.com/ZHZisZZ/modpo/blob/main/src/trainer).
 

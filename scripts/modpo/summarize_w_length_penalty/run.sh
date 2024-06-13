@@ -12,7 +12,7 @@ per_device_eval_batch_size=6
 gradient_accumulation_steps=4
 learning_rate=5e-4
 
-# SFT
+# Supervised Fine-Tuning: Run SFT with LoRA
 sft_run_name="${dataset_name}/sft"
 chosen_only=True
 PYTHONPATH=. $LAUNCH scripts/examples/sft/sft.py \
@@ -34,19 +34,17 @@ PYTHONPATH=. $LAUNCH scripts/examples/sft/sft.py \
     --peft_config.lora_alpha 1 \
     --peft_config.lora_dropout 0.05
 
-# Merge SFT LoRA weights
+# Supervised Fine-Tuning: Merge SFT LoRA weights
 PYTHONPATH=. python src/tools/merge_peft_adapter.py \
     --adapter_model_name "${output_dir}/${sft_run_name}/best_checkpoint" \
     --base_model_name ${base_model_name} \
     --dtype bf16 \
     --output_name "${output_dir}/${sft_run_name}/merged_checkpoint"
 
-# MODPO stage 1 is skipped since we use a programmatically defined reward function: negative length penalty
-
-# MODPO stage 2: language modeling with the negative length penalty as margin
+# Language Model: Run MODPO on human preferences, with length penalty as margin
 # r = r_prefernce + w*length_penalty
-w=0.1 # 0 reduces to vanilla dpo
-lm_run_name="${dataset_name}/modpo/lm/r_better+$w*length_penalty"
+w=0.1
+lm_run_name="${dataset_name}/modpo/lm/preference+($w)*length_penalty"
 PYTHONPATH=. $LAUNCH scripts/modpo/summarize_w_length_penalty/modpo.py \
     --sft_model_name "${output_dir}/${sft_run_name}/best_checkpoint" \
     --prompt_template "${prompt_template}" \
