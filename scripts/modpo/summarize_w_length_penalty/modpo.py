@@ -20,7 +20,7 @@ disable_progress_bar_non_local_main()
 class ScriptArguments:
 
     sft_model_name: str = field(metadata={"help": "the sft model name"})
-    use_flash_attention_2: Optional[bool] = field(default=True, metadata={"help": "whether to use flash attention 2"})
+    use_flash_attention_2: Optional[bool] = field(default=False, metadata={"help": "whether to use flash attention 2"})
     prompt_template: Optional[str] = field(default=DEFAULT_PROMPT_TEMPLATE, metadata={"help": "the prompt template"})
     dataset_name: Optional[str] = field(default="Anthropic/hh-rlhf", metadata={"help": "the dataset name"})
     dataset_caching: Optional[bool] = field(default=False, metadata={"help": "used cached dataset"})
