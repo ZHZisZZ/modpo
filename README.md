@@ -7,9 +7,9 @@ TL;DR: Compared to [DPO loss](https://github.com/ZHZisZZ/modpo/blob/main/src/tra
 ## Installation
 
 ```bash
-create -n modpo python=3.10
+conda create -n modpo python=3.10
 conda activate modpo
-pip install torch=2.1.0 --index-url https://download.pytorch.org/whl/cu118
+pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 # (optional) pip install flash-attn==2.3.2 --no-build-isolation
 ```
