@@ -10,7 +10,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trai
 
 from src.trainer.rm_trainer import RewardTrainer
 from src.data.configs import DATASET_CONFIGS, DEFAULT_PROMPT_TEMPLATE
-from src.utils import print_local_main, disable_progress_bar_non_local_main, param_sharding_enabled
+from src.utils import print_local_main, disable_progress_bar_non_local_main, param_sharding_enabled, set_seeds
 
 disable_progress_bar_non_local_main()
 
@@ -31,6 +31,7 @@ class ScriptArguments:
         default_factory=lambda: TrainingArguments(
             output_dir="./output/dev/reward",
             overwrite_output_dir=True,
+            seed=42,
 
             per_device_train_batch_size=4,
             per_device_eval_batch_size=4,
@@ -68,6 +69,7 @@ class ScriptArguments:
     )
 
 script_args = tyro.cli(ScriptArguments)
+set_seeds(script_args.training_args.seed)
 if not script_args.peft:
     script_args.peft_config = None
 

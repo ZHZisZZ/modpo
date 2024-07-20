@@ -10,7 +10,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments,
 
 from src.trainer.modpo_trainer import MODPOTrainer
 from src.data.configs import DATASET_CONFIGS, DEFAULT_PROMPT_TEMPLATE
-from src.utils import print_local_main, disable_progress_bar_non_local_main, param_sharding_enabled
+from src.utils import print_local_main, disable_progress_bar_non_local_main, set_seeds, param_sharding_enabled
 from src.utils.reward import RewardWrapperList, RewardWrapperBase, RewardWrapperInput
 
 disable_progress_bar_non_local_main()
@@ -36,6 +36,7 @@ class ScriptArguments:
         default_factory=lambda: TrainingArguments(
             output_dir="./output/dev/modpo",
             overwrite_output_dir=True,
+            seed=42,
 
             per_device_train_batch_size=4,
             per_device_eval_batch_size=4,
@@ -72,6 +73,7 @@ class ScriptArguments:
     )
 
 script_args = tyro.cli(ScriptArguments)
+set_seeds(script_args.training_args.seed)
 if not script_args.peft:
     script_args.peft_config = None
 

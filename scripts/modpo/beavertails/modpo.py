@@ -11,7 +11,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from src.trainer.modpo_trainer import MODPOTrainer
 from src.data.configs import DATASET_CONFIGS, DEFAULT_PROMPT_TEMPLATE
 from src.utils import (
-    print_local_main, disable_progress_bar_non_local_main, 
+    print_local_main, disable_progress_bar_non_local_main, set_seeds,
     prepare_model_for_peft, param_sharding_enabled, PeftAsPreTrained,
 )
 from src.utils.reward import RewardWrapperList, ImplicitRewardWrapper
@@ -40,6 +40,7 @@ class ScriptArguments:
         default_factory=lambda: TrainingArguments(
             output_dir="./output/dev/modpo",
             overwrite_output_dir=True,
+            seed=42,
 
             per_device_train_batch_size=4,
             per_device_eval_batch_size=4,
@@ -64,6 +65,7 @@ class ScriptArguments:
         )
     )
 
+    peft: Optional[bool] = field(default=True, metadata={"help": "whether to use peft for training"})
     peft_config: LoraConfig = field(
         default_factory=lambda: LoraConfig(
             r=16,
@@ -75,6 +77,9 @@ class ScriptArguments:
     )
 
 script_args = tyro.cli(ScriptArguments)
+set_seeds(script_args.training_args.seed)
+if not script_args.peft:
+    script_args.peft_config = None
 
 # base model
 print_local_main("loading model...")
