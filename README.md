@@ -41,13 +41,12 @@ To train on your datasets, add them under [`src/data/raw_data`](https://github.c
 ## Reference
 
 ```
-@misc{zhou2023onepreferencefitsall,
-      title={Beyond One-Preference-Fits-All Alignment: Multi-Objective Direct Preference Optimization}, 
-      author={Zhanhui Zhou and Jie Liu and Chao Yang and Jing Shao and Yu Liu and Xiangyu Yue and Wanli Ouyang and Yu Qiao},
-      year={2023},
-      eprint={2310.03708},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@inproceedings{zhou2024beyond,
+  title={Beyond one-preference-fits-all alignment: Multi-objective direct preference optimization},
+  author={Zhou, Zhanhui and Liu, Jie and Shao, Jing and Yue, Xiangyu and Yang, Chao and Ouyang, Wanli and Qiao, Yu},
+  booktitle={Findings of the Association for Computational Linguistics ACL 2024},
+  pages={10586--10613},
+  year={2024}
 }
 ```
 
